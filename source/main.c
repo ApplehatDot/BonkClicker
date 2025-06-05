@@ -9,6 +9,14 @@
 #include "PredFunc.c"
 
 HWND hClicka, hText;
+HBITMAP hBitmap;
+int points = 0;
+
+void UpdatePointsText() {
+    wchar_t buffer[64];
+    swprintf(buffer, 64, L"Points: %d", points);
+    SetWindowTextW(hText, buffer);
+}
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam){
 	switch(uMsg){
@@ -19,9 +27,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam){
 			hText = CreateWindowExW(
 				0,
 				L"STATIC",
-				L"Dis a text",
+				L"Points: 0",
 				WS_CHILD | WS_VISIBLE,
-				50, 50, 130, 20,
+				70, 50, 130, 20,
 				hwnd,
 				NULL,
 				GetModuleHandle(NULL),
@@ -34,15 +42,32 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam){
 				0, 
 				L"BUTTON",
 				L"bonk",
-				WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+				WS_VISIBLE | WS_CHILD | BS_BITMAP,
 				70, 100, 130, 130,
 				hwnd,
 				(HMENU)100, 
 				GetModuleHandle(NULL), 
 				NULL
 			);
-			break;
-		
+			
+			hBitmap = (HBITMAP)LoadImageW(
+                NULL,
+                L"bonk.bmp",      // Ścieżka do pliku BMP
+                IMAGE_BITMAP,
+                0, 0,
+                LR_LOADFROMFILE
+            );
+            if (hBitmap) {
+                SendMessageW(hClicka, BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBitmap);
+            }
+            break;
+			
+		case WM_COMMAND:
+            if (LOWORD(wParam) == 100) { // Przycisk bonk
+                points++; // Zwiększ punkty
+                UpdatePointsText(); // Aktualizuj wyświetlany tekst
+            }
+            break;
 		default:
 			return DefWindowProcW(hwnd, uMsg, wParam, lParam);
 	}
@@ -70,7 +95,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		L"BonkClicker",
 		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
 		CW_USEDEFAULT, CW_USEDEFAULT,
-		300, 430,
+		300, 300,
 		NULL,
 		NULL,
 		hInstance,
