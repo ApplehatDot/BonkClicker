@@ -1,12 +1,15 @@
 /*
 	BonkClicker - a goofy clicker for WinAPI
 	Made by Applehat. (github.com/ApplehatDot)
-	
+	BONK - for MarsVinyl1234
 */ 
 
 #include <windows.h>
+#include <mmsystem.h>
 #include <stdio.h>
 #include "PredFunc.c"
+
+#pragma comment(lib, "winmm.lib")
 
 HWND hClicka, hText;
 HBITMAP hBitmap;
@@ -18,12 +21,26 @@ void UpdatePointsText() {
     SetWindowTextW(hText, buffer);
 }
 
+
+void MakeMenu(){
+	
+}
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam){
 	switch(uMsg){
 		case WM_DESTROY:
 			PostQuitMessage(0);
 			return 0;
 		case WM_CREATE:
+			
+			HMENU hMenuBar = CreateMenu();
+			HMENU hQuit = CreateMenu();
+			HMENU hAbout = CreateMenu();
+			AppendMenuW(hQuit, MF_STRING, 9001, L"Quit");
+			AppendMenuW(hMenuBar, MF_POPUP, (UINT_PTR)hQuit, L"Quit");
+			AppendMenuW(hMenuBar, MF_POPUP, (UINT_PTR)hAbout, L"About Game");
+			AppendMenuW(hAbout, MF_STRING, 9002, L"About");
+			SetMenu(hwnd, hMenuBar);
+		
 			hText = CreateWindowExW(
 				0,
 				L"STATIC",
@@ -63,11 +80,20 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam){
             break;
 			
 		case WM_COMMAND:
-            if (LOWORD(wParam) == 100) { // Przycisk bonk
-                points++; // Zwiększ punkty
-                UpdatePointsText(); // Aktualizuj wyświetlany tekst
+			if (LOWORD(wParam) == 100) {
+				points++;
+				UpdatePointsText();
+				if (points % 100 == 0) {
+					PlaySoundW(L"bonk.wav", NULL, SND_FILENAME | SND_ASYNC);
+				}
+			}
+			if (LOWORD(wParam) == 9001) {
+                PostMessage(hwnd, WM_CLOSE, 0, 0);
             }
-            break;
+			if (LOWORD(wParam) == 9002) {
+                MessageBoxW(NULL,  L"BONK Clicker\n\nCreated by Applehat.\nDedicated to fellow bonkers:\nElif, MarsVinyl1234, Deborah (a.k.a. Reverse Name)", L"About", MB_OK);
+            }
+			break;
 		default:
 			return DefWindowProcW(hwnd, uMsg, wParam, lParam);
 	}
