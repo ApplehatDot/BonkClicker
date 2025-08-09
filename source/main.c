@@ -4,15 +4,20 @@
 	BONK - for MarsVinyl1234
 */ 
 
+// ## Trying to make it more readable and organized
+// - ApplehatDot on 9.08.2025
+
 #include <windows.h>
 #include <mmsystem.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include "PredFunc.c"
 
 #pragma comment(lib, "winmm.lib")
 
 HWND hClicka, hText;
 HBITMAP hBitmap;
+bool IsSoundPlaying;
 int points = 0;
 
 void UpdatePointsText() {
@@ -21,10 +26,20 @@ void UpdatePointsText() {
     SetWindowTextW(hText, buffer);
 }
 
-
-void MakeMenu(){
+void MakeMenu(HWND hwnd){
+	HMENU hMenuBar = CreateMenu();
+	HMENU hQuit = CreateMenu();
+	HMENU hAbout = CreateMenu();
 	
+	/* Tabbing cuz it makes stuff stand-out */
+		AppendMenuW(hQuit, MF_STRING, 9001, L"Quit");
+		AppendMenuW(hMenuBar, MF_POPUP, (UINT_PTR)hQuit, L"Quit");
+		AppendMenuW(hMenuBar, MF_POPUP, (UINT_PTR)hAbout, L"About Game");
+		AppendMenuW(hAbout, MF_STRING, 9002, L"About");
+		
+	SetMenu(hwnd, hMenuBar);
 }
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam){
 	switch(uMsg){
 		case WM_DESTROY:
@@ -32,14 +47,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam){
 			return 0;
 		case WM_CREATE:
 			
-			HMENU hMenuBar = CreateMenu();
-			HMENU hQuit = CreateMenu();
-			HMENU hAbout = CreateMenu();
-			AppendMenuW(hQuit, MF_STRING, 9001, L"Quit");
-			AppendMenuW(hMenuBar, MF_POPUP, (UINT_PTR)hQuit, L"Quit");
-			AppendMenuW(hMenuBar, MF_POPUP, (UINT_PTR)hAbout, L"About Game");
-			AppendMenuW(hAbout, MF_STRING, 9002, L"About");
-			SetMenu(hwnd, hMenuBar);
+			MakeMenu(hwnd);
 		
 			hText = CreateWindowExW(
 				0,
@@ -69,31 +77,44 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam){
 			
 			hBitmap = (HBITMAP)LoadImageW(
                 NULL,
-                L"bonk.bmp",      // Ścieżka do pliku BMP
+                L"bonk.bmp",
                 IMAGE_BITMAP,
                 0, 0,
                 LR_LOADFROMFILE
             );
-            if (hBitmap) {
+			
+            if (hBitmap){
                 SendMessageW(hClicka, BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBitmap);
-            }
+            } else if (!hBitmap){
+				MessageBoxW(NULL, L"No bitmap detected - game cannot start", L"Error", MB_OK | MB_ICONEXCLAMATION);
+				exit(1);
+			}
             break;
 			
 		case WM_COMMAND:
-			if (LOWORD(wParam) == 100) {
-				points++;
-				UpdatePointsText();
-				if (points % 100 == 0) {
-					PlaySoundW(L"bonk.wav", NULL, SND_FILENAME | SND_ASYNC);
-				}
-			}
-			if (LOWORD(wParam) == 9001) {
-                PostMessage(hwnd, WM_CLOSE, 0, 0);
-            }
-			if (LOWORD(wParam) == 9002) {
-                MessageBoxW(NULL,  L"BONK Clicker\n\nCreated by Applehat.\nDedicated to fellow bonkers:\nElif, MarsVinyl1234, Deborah (a.k.a. Reverse Name)", L"About", MB_OK);
-            }
-			break;
+		
+			// Using switches is .. more readable ig :shrug:
+			switch(LOWORD(wParam)){
+				case 100: //if (LOWORD(wParam) == 100) {
+					points++;
+					UpdatePointsText();
+					if (points % 100 == 0) {
+						IsSoundPlaying = PlaySoundW(L"bonk.wav", NULL, SND_FILENAME | SND_ASYNC);
+						if(!IsSoundPlaying){		
+							MessageBoxW(NULL, L"Could not play sound - PlaySoundW Failed", L"Audio Error", MB_OK | MB_ICONEXCLAMATION);
+						}
+					}
+				break;
+				
+				case 9001: //if (LOWORD(wParam) == 9001) {
+					PostMessage(hwnd, WM_CLOSE, 0, 0);
+					break;
+					
+				case 9002: //if (LOWORD(wParam) == 9002) {
+					MessageBoxW(NULL,  L"BONK Clicker v1.0.1-Enhanced\n\nCreated by Applehat.\nDedicated to fellow bonkers:\nElif, MarsVinyl1234, Deborah (a.k.a. Reverse Name)", L"About", MB_OK);
+					break;
+			}	// <-- switch ends here
+			
 		default:
 			return DefWindowProcW(hwnd, uMsg, wParam, lParam);
 	}
@@ -111,7 +132,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 	
 	if(!RegisterClassW(&wc)){
-		MessageBoxW(NULL, L"Window Registration Failed", L"Error!", MB_ICONEXCLAMATION | MB_OK);
+		MessageBoxW(NULL, L"Window Registration Failed", L"Error", MB_ICONEXCLAMATION | MB_OK);
 		return 0;
 	}
 	
@@ -137,5 +158,4 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		DispatchMessage(&msg);
 	}
 	return msg.wParam;
-	
 }

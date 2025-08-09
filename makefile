@@ -1,6 +1,11 @@
 env:
-	mkdir obj
 	mkdir bin
 
-all:
+app:
 	gcc -o bin/BonkClicker.exe source/main.c -lgdi32 -lwinmm -mwindows
+	echo Finished.
+
+all:	
+	make env
+	make app
+	
